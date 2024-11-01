@@ -4,7 +4,7 @@ USE CustomClothes;
 
 -- Tabela Funcionario
 CREATE TABLE tbFuncionario(
-CPF int primary key,
+CPF varchar(11) primary key,
 RG char(9) not null UNIQUE,
 Nome varchar(50) not null,
 DataNans date not null,
@@ -17,7 +17,7 @@ Senha varchar(20) not null
 
 -- Tabela Cliente
 CREATE TABLE tbCliente(
-CPF int primary key,
+CPF varchar(11) primary key,
 RG varchar(9) not null UNIQUE ,
 Nome varchar(50) not null,
 DataNans date not null,
@@ -37,8 +37,8 @@ Cidade varchar(50) not null,
 Bairro varchar(50) not null,
 CEP char(8) not null,
 Complemento varchar(80),
-CPFFun int, -- CPF de Funcionario
-CPFCli int, -- CPF de Cliente
+CPFFun varchar(11), -- CPF de Funcionario
+CPFCli varchar(11), -- CPF de Cliente
 
 -- Chaves estrangeiras
 foreign key (CPFFun) references tbFuncionario(CPF),
@@ -77,8 +77,8 @@ DataEntrega datetime, -- QUANDO PEDIDO FOI ENTREGUE
 Status char(15),
 CHECK(Status = "CANCELADO" || Status = "EM TRANSITO" || Status = "ENTREGUE" || Status = "PREPARANDO" || Status = "A PAGAR"),
 ValorTotal decimal(8,2) DEFAULT 0,
-CPFCli int not null, -- CPF cliente
-CPFFun int, -- CPF Funcionario
+CPFCli varchar(11) not null, -- CPF cliente
+CPFFun varchar(11), -- CPF Funcionario
 
 -- Chaves estrangeiras
 foreign key (CPFFun) references tbFuncionario(CPF),
@@ -152,7 +152,7 @@ FormaPag varchar(20) not null,
 ICMS decimal(8,2),
 ValorPedido decimal(8,2) not null,
 ValorTotal decimal(8,2) AS (ValorPedido + IFNULL(ICMS, 0)) STORED, -- caucula o valor total
-CPFCli int not null,
+CPFCli varchar(11) not null,
 IdPedido int, -- DUVIDA 
 
 -- Chaves estrangeiras
@@ -179,7 +179,7 @@ CREATE TABLE tbNotaFiscal(
     Hora time not null, 
     ValorTotal decimal(8,2) not null, 
     IdPedido int not null, 
-    IdCliente int not null, 
+    IdCliente varchar(11) not null, 
     IdPagamento int not null, 
     
     -- Chaves estrangeiras
@@ -188,18 +188,91 @@ CREATE TABLE tbNotaFiscal(
     foreign key (IdPagamento) references tbPagamento(IdPagamento)
 );
 
--- procidures, 
 -- trigger
 -- restrições
 -- view com iner join para nota fiscal
 
 
+-- PROCEDURES DE CLIENTE
+-- CADASTRAR CLIENTE
+drop procedure pcd_CadastrarCliente;
+DELIMITER $$
+create procedure pcd_CadastrarCliente(
+_CPF varchar(11),
+_RG varchar(9),
+_Nome varchar(50),
+_DataNans date,
+_Celular varchar(11),
+_Sexo char(1),
+_Email varchar(40),
+_Senha varchar(20)
+)
+	begin
+		start transaction;
+			insert into tbCliente (CPF, RG, Nome, DataNans, Celular, Sexo, Email, Senha)
+			values (_CPF, _RG, _Nome, _DataNans, _Celular, _Sexo, _Email, _Senha);
+		commit;
+	rollback;
+end $$
+-- Teste
+CALL pcd_CadastrarCliente("54554512312", "256536987","Renata Teixeira", "2006-02-25",
+ 184596879, "M", "Natita@gmail.com", "1234578");
+select * from tbCliente;
+
+-- UPDATE CLIENTE	
+drop procedure pcd_AtualizarCliente;
+DELIMITER $$
+create procedure pcd_AtualizarCliente(
+_CPF varchar(11),
+_RG varchar(9),
+_Nome varchar(50),
+_DataNans date,
+_Celular varchar(11),
+_Sexo char(1),
+_Email varchar(40),
+_Senha varchar(20)
+)
+	begin
+		start transaction;
+			update tbCliente set RG = _RG, Nome = _Nome, DataNans = _DataNans,
+            Celular = _Celular, Sexo = _Sexo, Email = _Email, Senha = _Senha
+			where CPF = _CPF;
+		commit;
+	rollback;
+end $$
+call pcd_AtualizarCliente("54554512312", "256536987",'Renata', "2006-02-25",
+ 184596879, "M", "Natita@gmail.com", "1234578");
+
+-- EXCLUIR CLIENTE
+DELIMITER $$
+create procedure pcd_DeletarCliente(_CPF varchar(11))
+begin
+	delete from tbCliente where CPF = _CPF;
+end $$
+call pcd_DeletarCliente("54554512312");
+
+-- LOGIN DE CLIENTE
+DELIMITER $$
+CREATE PROCEDURE pcd_LoginCliente(_Email varchar(40), _Senha varchar(20))
+BEGIN 
+	SELECT * FROM tbCliente WHERE Email = _Email AND Senha = _Senha;
+END $$
+CALL pcd_LoginCliente("Natita@gmail.com", "1234578");
+
+-- OBTER CLIENTE POR CPF
+DELIMITER $$
+CREATE PROCEDURE pcd_ExibirCliente(_CPF varchar(11))
+BEGIN 
+	SELECT * FROM tbCliente WHERE CPF = _CPF;
+END $$
+CALL pcd_ExibirCliente("54554512312");
+
+-- OBTER CLIENTE POR NOME
+DELIMITER $$
+CREATE PROCEDURE pcd_ExibirCliente_Nome(_Nome varchar(50))
+BEGIN 
+	SELECT * FROM tbCliente WHERE Nome = _Nome;
+END $$
+CALL pcd_ExibirCliente_Nome("Renata Teixeira");
 
 
--- dataCadas timestamp default current_timestamp 
--- primary key(codDentista)
--- dateAtend date not null DEFAULT (CURRENT_DATE),
--- horaAtend time not null default (current_time),
-
-
--- arrumar a nota fical, e todos os atributos que são numeros mas n precisam de ser do tipo inteiro
