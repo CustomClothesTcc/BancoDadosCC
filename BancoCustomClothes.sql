@@ -139,8 +139,8 @@ VALUES ('12345678901', '987654321', 'João Silva', '1990-05-15', '11987654321', 
 INSERT INTO tbCliente (CPF, RG, Nome, DataNans, Celular, Sexo, Email, Senha, IdEndereco)
 VALUES ('98765432100', '123456789', 'Maria Oliveira', '1985-08-25', '21987654321', 'F', 'maria@email.com', SHA2('senha456', 256), 1);
 
-INSERT INTO tbProduto (Tecido, Descricao, Categoria, Cor, Quantidade, Tamanho, DescImg, Situacao, Valor)
-VALUES ('ALGODAO', 'Camiseta Básica', 'Superior', 'Branco', 100, 'M', 'imagem1.png', 'Estoque', 29.99);
+INSERT INTO tbProduto (Tecido, Descricao, Categoria, Cor, Quantidade, Tamanho, DescImg, Situacao, Valor, Estampa)
+VALUES ('ALGODAO', 'Camiseta Básica', 'Superior', 'Branco', 100, 'M', 'imagem1.png', 'Estoque', 29.99, "teste");
 
 INSERT INTO tbPedido (DataTransito, DataEntrega, PedidoStatus, ValorTotal, CPFCli, CPFFun, Quantidade)
 VALUES ('2024-11-10', '2024-11-15', 'PROCESSO', 89.99, '98765432100', '12345678901', 1);
@@ -154,156 +154,99 @@ VALUES ('2024-11-15', '14:30:00', 'pix', 3.00, '98765432100', 1);
 INSERT INTO tbNotaFiscal (CodigoVerificacao, NomeEmpresa, CNPJ, ICMS, ValorTotal, DataNota, Hora, IdPedido, IdEndereco, IdPagamento)
 VALUES (987654, 'CustomClothes', '12345678000199', 7.29, 92.99, '2024-11-15', '14:45:00', 1, 1, 1);
 
-
--- Facilitar a visualização de quantidade dos produtos, nome do produto e valor do produto
-CREATE VIEW vwProdutosInfo AS
-SELECT 
-    tbProduto.IdProduto,
-    tbProduto.Descricao AS NomeProduto,
-    tbProduto.Quantidade AS Quantidade,
-    tbProduto.Valor AS ValorProduto
-FROM 
-    tbProduto;
--- Visualizar a receita total das vendas do mês atual
-CREATE VIEW vwReceitaMesAtual AS
-SELECT 
-    SUM(tbItemPedido.Quantidade * tbItemPedido.ValorUnit) AS ReceitaTotalMesAtual
-FROM 
-    tbPedido
-INNER JOIN 
-    tbItemPedido ON tbPedido.IdPedido = tbItemPedido.IdPedido
-WHERE 
-    MONTH(tbPedido.DataPedido) = MONTH(CURRENT_DATE())
-    AND YEAR(tbPedido.DataPedido) = YEAR(CURRENT_DATE());
--- Visualizar a receita total das vendas de cada mês
-CREATE VIEW vwReceitaMensal AS
-SELECT 
-    MONTH(tbPedido.DataPedido) AS Mes,
-    YEAR(tbPedido.DataPedido) AS Ano,
-    SUM(tbItemPedido.Quantidade * tbItemPedido.ValorUnit) AS ReceitaTotal
-FROM 
-    tbPedido
-INNER JOIN 
-    tbItemPedido ON tbPedido.IdPedido = tbItemPedido.IdPedido
-GROUP BY 
-    YEAR(tbPedido.DataPedido), MONTH(tbPedido.DataPedido);
-
-			
--- Tabela com ID do produto, nome do produto, cliente, data, quantia e método de pagamento
-CREATE VIEW vwDetalhesPedidos AS
-SELECT 
-    tbProduto.IdProduto,
-    tbProduto.Descricao AS NomeProduto,
-    tbCliente.Nome AS NomeCliente,
-    tbPedido.DataPedido,
-    tbItemPedido.Quantidade AS Quantidade,
-    tbPagamento.FormaPag AS MetodoPagamento
-FROM 
-    tbPedido
-INNER JOIN 
-    tbItemPedido ON tbPedido.IdPedido = tbItemPedido.IdPedido
-INNER JOIN 
-    tbProduto ON tbItemPedido.IdProduto = tbProduto.IdProduto
-INNER JOIN 
-    tbCliente ON tbPedido.CPFCli = tbCliente.CPF
-INNER JOIN 
-    tbPagamento ON tbPedido.IdPedido = tbPagamento.IdPedido;
-
-
--- trigger
--- restrições
--- view com iner join para nota fiscal
-
-
 -- PROCEDURES DE CLIENTE
--- CADASTRAR CLIENTE
--- drop procedure pcd_CadastrarCliente;
 DELIMITER $$
-create procedure pcd_CadastrarCliente(
-_CPF varchar(11),
-_RG varchar(9),
-_Nome varchar(50),
-_DataNans date,
-_Celular varchar(11),
-_Sexo char(1),
-_Email varchar(40),
-_Senha varchar(20)
+CREATE PROCEDURE pcd_CadastrarCliente(
+    _CPF VARCHAR(11),
+    _RG VARCHAR(9),
+    _Nome VARCHAR(50),
+    _DataNans DATE,
+    _Celular VARCHAR(11),
+    _Sexo CHAR(1),
+    _Email VARCHAR(40),
+    _Senha VARCHAR(20)
 )
-	begin
-		start transaction;
-			insert into tbCliente (CPF, RG, Nome, DataNans, Celular, Sexo, Email, Senha)
-			values (_CPF, _RG, _Nome, _DataNans, _Celular, _Sexo, _Email, _Senha);
-		commit;
-	rollback;
-end $$
--- Teste
-CALL pcd_CadastrarCliente("5455452312", "25653687","Renata Teixeira", "2006-02-25",
- 184596879, "M", "Natita@gmail.com", "1234578");
-
-select * from tbCliente;
+BEGIN
+    START TRANSACTION;
+    INSERT INTO tbCliente (CPF, RG, Nome, DataNans, Celular, Sexo, Email, Senha)
+    VALUES (_CPF, _RG, _Nome, _DataNans, _Celular, _Sexo, _Email, _Senha);
+    COMMIT;
+END $$
+DELIMITER ;
 
 GRANT EXECUTE ON PROCEDURE CustomClothes.pcd_CadastrarCliente TO 'root'@'localhost';
 FLUSH PRIVILEGES;
 
--- UPDATE CLIENTE	
- -- drop procedure pcd_AtualizarCliente;
+-- Atualizar Cliente
 DELIMITER $$
-create procedure pcd_AtualizarCliente(
-_CPF varchar(11),
-_RG varchar(9),
-_Nome varchar(50),
-_DataNans date,
-_Celular varchar(11),
-_Sexo char(1),
-_Email varchar(40),
-_Senha varchar(20)
+CREATE PROCEDURE pcd_AtualizarCliente(
+    _CPF VARCHAR(11),
+    _RG VARCHAR(9),
+    _Nome VARCHAR(50),
+    _DataNans DATE,
+    _Celular VARCHAR(11),
+    _Sexo CHAR(1),
+    _Email VARCHAR(40),
+    _Senha VARCHAR(20)
 )
-	begin
-		start transaction;
-			update tbCliente set RG = _RG, Nome = _Nome, DataNans = _DataNans,
-            Celular = _Celular, Sexo = _Sexo, Email = _Email, Senha = _Senha
-			where CPF = _CPF;
-		commit;
-	rollback;
-end $$
-call pcd_AtualizarCliente("54554512312", "256536987",'Renata', "2006-02-25",
- 184596879, "M", "Natita@gmail.com", "1234578");
+BEGIN
+    START TRANSACTION;
+    UPDATE tbCliente 
+    SET RG = _RG, Nome = _Nome, DataNans = _DataNans, Celular = _Celular, Sexo = _Sexo, Email = _Email, Senha = _Senha
+    WHERE CPF = _CPF;
+    COMMIT;
+END $$
+DELIMITER ;
 
--- EXCLUIR CLIENTE
+-- Excluir Cliente
 DELIMITER $$
-create procedure pcd_DeletarCliente(_CPF varchar(11))
-begin
-	delete from tbCliente where CPF = _CPF;
-end $$
-call pcd_DeletarClientepcd_LoginCliente("54554512312");
+CREATE PROCEDURE pcd_ExcluirCliente(_CPF VARCHAR(11))
+BEGIN
+    START TRANSACTION;
+    DELETE FROM tbCliente WHERE CPF = _CPF;
+    COMMIT;
+END $$
+DELIMITER ;
 
 -- LOGIN DE CLIENTE
 DELIMITER $$
-CREATE PROCEDURE pcd_LoginCliente(_Email varchar(40), _Senha varchar(20))
+CREATE PROCEDURE pcd_LoginCliente(_Email VARCHAR(40), _Senha VARCHAR(20))
 BEGIN 
-	SELECT * FROM tbCliente WHERE Email = _Email AND Senha = _Senha;
+	SELECT * 
+	FROM tbCliente 
+	WHERE Email = _Email AND Senha = SHA2(_Senha, 256); -- Segurança aplicada na senha
 END $$
+DELIMITER ;
+
+-- Chamada da procedure de login
 CALL pcd_LoginCliente("Natita@gmail.com", "1234578");
+
+-- Permissão para executar a procedure
 GRANT EXECUTE ON PROCEDURE CustomClothes.pcd_LoginCliente TO 'root'@'localhost';
 FLUSH PRIVILEGES;
 
 -- OBTER CLIENTE POR CPF
 DELIMITER $$
-CREATE PROCEDURE pcd_ExibirCliente(_CPF varchar(11))
+CREATE PROCEDURE pcd_ExibirCliente(_CPF VARCHAR(11))
 BEGIN 
-	SELECT * FROM tbCliente WHERE CPF = _CPF;
+	SELECT * 
+	FROM tbCliente 
+	WHERE CPF = _CPF;
 END $$
+DELIMITER ;
+
+-- Chamada da procedure para obter cliente por CPF
 CALL pcd_ExibirCliente("54554512312");
 
 -- OBTER CLIENTE POR NOME
 DELIMITER $$
-CREATE PROCEDURE pcd_ExibirCliente_Nome(_Nome varchar(50))
+CREATE PROCEDURE pcd_ExibirCliente_Nome(_Nome VARCHAR(50))
 BEGIN 
-	SELECT * FROM tbCliente WHERE Nome = _Nome;
+	SELECT * 
+	FROM tbCliente 
+	WHERE Nome = _Nome;
 END $$
-CALL pcd_ExibirCliente_Nome("Renata Teixeira");
--- Atualazando
-/*select * from tbProduto;
+DELIMITER ;
 
-use CustomClothes;
-select * from tbCliente;*/
+-- Chamada da procedure para obter cliente por Nome
+CALL pcd_ExibirCliente_Nome("Renata Teixeira");
