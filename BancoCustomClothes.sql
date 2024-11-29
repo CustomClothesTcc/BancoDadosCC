@@ -279,13 +279,13 @@ call pcd_DeletarClientepcd_LoginCliente("54554512312");
 
 -- LOGIN DE CLIENTE
 DELIMITER $$
-CREATE PROCEDURE pcd_LoginCliente(_Email varchar(40), _Senha varchar(20))
+CREATE PROCEDURE pcd_LoginCliente(_Email VARCHAR(40), _Senha VARCHAR(20))
 BEGIN 
-	SELECT * FROM tbCliente WHERE Email = _Email AND Senha = _Senha;
+	SELECT * 
+	FROM tbCliente 
+	WHERE Email = _Email AND Senha = _Senha; -- Segurança aplicada na senha
 END $$
-CALL pcd_LoginCliente("Natita@gmail.com", "1234578");
-GRANT EXECUTE ON PROCEDURE CustomClothes.pcd_LoginCliente TO 'root'@'localhost';
-FLUSH PRIVILEGES;
+DELIMITER ;
 
 -- OBTER CLIENTE POR CPF
 DELIMITER $$
@@ -302,8 +302,11 @@ BEGIN
 	SELECT * FROM tbCliente WHERE Nome = _Nome;
 END $$
 CALL pcd_ExibirCliente_Nome("Renata Teixeira");
+
+ describe tbProduto;
 -- Atualazando
-/*select * from tbProduto;
+/*select * from  tbCliente;
 
 use CustomClothes;
-select * from tbCliente;*/
+select * from tbCliente;
+select * from tbProduto;*/
