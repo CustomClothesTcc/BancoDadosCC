@@ -66,9 +66,9 @@ CREATE TABLE tbPedido (
     Quantidade INT NOT NULL,
     DataTransito DATE,
     DataEntrega DATETIME,
-    CPFCli CHAR(11) NOT NULL,
-    CPFFun CHAR(11) NOT NULL
+    CPFCli CHAR(11) NOT NULL
 );
+
 
 -- Tabela ItemPedido
 CREATE TABLE tbItemPedido (
@@ -113,8 +113,7 @@ ALTER TABLE tbCliente
     ADD CONSTRAINT fk_Cliente_Endereco FOREIGN KEY (IdEndereco) REFERENCES tbEndereco(IdEndereco);
 
 ALTER TABLE tbPedido
-    ADD CONSTRAINT fk_Pedido_Cliente FOREIGN KEY (CPFCli) REFERENCES tbCliente(CPF),
-    ADD CONSTRAINT fk_Pedido_Funcionario FOREIGN KEY (CPFFun) REFERENCES tbFuncionario(CPF);
+    ADD CONSTRAINT fk_Pedido_Cliente FOREIGN KEY (CPFCli) REFERENCES tbCliente(CPF);
 
 ALTER TABLE tbItemPedido
     ADD CONSTRAINT fk_ItemPedido_Produto FOREIGN KEY (IdProduto) REFERENCES tbProduto(IdProduto),
@@ -139,21 +138,8 @@ VALUES ('12345678901', '987654321', 'João Silva', '1990-05-15', '11987654321', 
 INSERT INTO tbCliente (CPF, RG, Nome, DataNans, Celular, Sexo, Email, Senha, IdEndereco)
 VALUES ('98765432100', '123456789', 'Maria Oliveira', '1985-08-25', '21987654321', 'F', 'maria@email.com', SHA2('senha456', 256), 1);
 
-INSERT INTO tbProduto (Tecido, Descricao, Categoria, Cor, Quantidade, Tamanho, DescImg, Situacao, Valor)
-VALUES ('ALGODAO', 'Camiseta Básica', 'Superior', 'Branco', 100, 'M', 'imagem1.png', 'Estoque', 29.99);
-
-INSERT INTO tbPedido (DataTransito, DataEntrega, PedidoStatus, ValorTotal, CPFCli, CPFFun, Quantidade)
-VALUES ('2024-11-10', '2024-11-15', 'PROCESSO', 89.99, '98765432100', '12345678901', 1);
-
-INSERT INTO tbItemPedido (Quantidade, ValorUnit, IdProduto, IdPedido)
-VALUES (3, 29.99, 1, 1);
-
-INSERT INTO tbPagamento (DataPag, Hora, FormaPag, ValorPedido, CPFCli, IdPedido)
-VALUES ('2024-11-15', '14:30:00', 'pix', 3.00, '98765432100', 1);
-
-INSERT INTO tbNotaFiscal (CodigoVerificacao, NomeEmpresa, CNPJ, ICMS, ValorTotal, DataNota, Hora, IdPedido, IdEndereco, IdPagamento)
-VALUES (987654, 'CustomClothes', '12345678000199', 7.29, 92.99, '2024-11-15', '14:45:00', 1, 1, 1);
-
+INSERT INTO tbPedido (DataTransito, DataEntrega, PedidoStatus, ValorTotal, CPFCli, Quantidade)
+VALUES ('2024-11-10', '2024-11-15', 'PROCESSO', 89.99, '98765432100', 1);
 
 -- Facilitar a visualização de quantidade dos produtos, nome do produto e valor do produto
 CREATE VIEW vwProdutosInfo AS
@@ -301,12 +287,15 @@ CREATE PROCEDURE pcd_ExibirCliente_Nome(_Nome varchar(50))
 BEGIN 
 	SELECT * FROM tbCliente WHERE Nome = _Nome;
 END $$
-CALL pcd_ExibirCliente_Nome("Renata Teixeira");
+-- CALL pcd_ExibirCliente_Nome("Renata Teixeira");
 
- describe tbProduto;
+use CustomClothes;
+ select * from tbProduto;
 -- Atualazando
 /*select * from  tbCliente;
 
 use CustomClothes;
 select * from tbCliente;
-select * from tbProduto;*/
+select * from tbCliente;*/
+describe tbPedido;
+delete from tbProduto where IdProduto = 1; 
